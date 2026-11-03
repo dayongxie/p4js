@@ -13,7 +13,10 @@
     }
   },
   "files": [
-    "dist",
+    "dist/*.js",
+    "dist/*.d.ts",
+    "dist/*.js.map",
+    "prebuilds",
     "README.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md"
@@ -24,8 +27,8 @@
   "gypfile": true,
   "scripts": {
     "setup": "node scripts/setup-sdk.mjs",
-    "install": "node scripts/install.mjs",
     "build": "node scripts/build.mjs",
+    "prebuild": "node scripts/prebuild.mjs",
     "build:native": "node-gyp rebuild",
     "build:js": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

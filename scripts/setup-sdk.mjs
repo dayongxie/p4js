@@ -160,6 +160,9 @@ function installP4ApiWindows() {
     const file = path.join(sourceRoot, name);
     if (fs.existsSync(file)) copyFile(file, path.join(p4apiDir, name));
   }
+  if (!fs.existsSync(path.join(p4apiDir, 'Version'))) {
+    fs.writeFileSync(path.join(p4apiDir, 'Version'), `${path.basename(sourceRoot)}\n`);
+  }
 }
 
 function installP4ApiUnix(archiveUrl, archiveName) {
@@ -183,6 +186,9 @@ function installP4ApiUnix(archiveUrl, archiveName) {
   for (const name of ['Version', 'LICENSE', 'README']) {
     const file = path.join(sourceRoot, name);
     if (fs.existsSync(file)) copyFile(file, path.join(p4apiDir, name));
+  }
+  if (!fs.existsSync(path.join(p4apiDir, 'Version'))) {
+    fs.writeFileSync(path.join(p4apiDir, 'Version'), `${path.basename(sourceRoot)}\n`);
   }
 }
 
@@ -261,10 +267,25 @@ async function installOpenSsl(opensslFrom) {
   // Copy the OpenSSL headers only (never unrelated include/ directories).
   copyDir(path.join(sourceRoot, 'include', 'openssl'), path.join(p4sslDir, 'include', 'openssl'));
 
-  // Normalise the library layout: lib/libssl.lib + lib/libcrypto.lib.
+  // Normalise the library layout. Prefer static libs when the package ships
+  // them because a statically linked addon has no OpenSSL DLL dependency.
+  const staticSsl = findOne(path.join(sourceRoot, 'lib'), (file) =>
+    /(^|[\\/])libssl_static\.lib$/i.test(file),
+  );
+  const staticCrypto = findOne(path.join(sourceRoot, 'lib'), (file) =>
+    /(^|[\\/])libcrypto_static\.lib$/i.test(file),
+  );
+
+  if (staticSsl && staticCrypto) {
+    log('copying static OpenSSL libraries (optional, P4SSL_STATIC=1)');
+    copyFile(staticSsl, path.join(p4sslDir, 'lib', 'libssl_static.lib'));
+    copyFile(staticCrypto, path.join(p4sslDir, 'lib', 'libcrypto_static.lib'));
+  }
+
   const sslLib = findOne(path.join(sourceRoot, 'lib'), (file) => /(^|[\\/])libssl\.lib$/i.test(file));
   const cryptoLib = findOne(path.join(sourceRoot, 'lib'), (file) => /(^|[\\/])libcrypto\.lib$/i.test(file));
   if (!sslLib || !cryptoLib) {
+    if (staticSsl && staticCrypto) return;
     throw new Error(`cannot find libssl.lib/libcrypto.lib under ${path.join(sourceRoot, 'lib')}`);
   }
   copyFile(sslLib, path.join(p4sslDir, 'lib', 'libssl.lib'));

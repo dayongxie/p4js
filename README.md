@@ -28,11 +28,29 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 
 ## 构建
 
+仓库内置 **Windows x64 预编译二进制**（`prebuilds/win32-x64/`），普通使用只需：
+
+```bash
+npm install
+```
+
+`require('p4js')` 会优先使用本地构建产物，其次使用 `prebuilds/<platform>-<arch>/`
+中的预编译模块。Windows 预编译包包含 `p4js_native.node` 以及 OpenSSL 3.5.9 的
+`libssl-3-x64.dll` / `libcrypto-3-x64.dll`，不需要安装 Visual Studio、P4API 或
+OpenSSL。
+
+需要从源码构建（其他平台，或修改了 `src/native/`）：
+
 ```bash
 npm install
 npm run setup     # 下载 P4API SDK（Windows 同时下载 OpenSSL 开发包）
 npm run build     # node-gyp + tsc，产物在 dist/
+npm run prebuild  # 可选：生成/更新 prebuilds/<platform>-<arch>/
 ```
+
+`npm run prebuild` 会写入 `prebuilds/<platform>-<arch>/manifest.json`（平台、
+架构、N-API 版本、P4API/OpenSSL 版本、git commit）。预编译模块使用 N-API 8，
+因此同一平台的 Node.js >= 20 可共用，无需按 Node ABI 重新编译。
 
 Windows 上如果已有 OpenSSL 3 开发目录，可以跳过下载：
 
@@ -155,7 +173,8 @@ npm run test:integration
   DVCS `init/clone`、`tempClient`。
 - 进度回调在主线程执行；请保持回调快速，且不要在回调里调用 p4js 的原生命令。
 - 同一实例的异步操作串行执行；进程内 P4API 调用使用全局互斥锁（v0.1 保守策略）。
-- 不发布预编译二进制；每个平台需要本地构建。
+- 仓库内置 Windows x64 预编译二进制；Linux/macOS 需要从源码构建，或使用
+  `Prebuilt binaries` GitHub Actions 工作流产出的 artifact。
 
 ## 许可
 

@@ -2,7 +2,10 @@
   "variables": {
     "p4api_root%": "<!(node -e \"console.log(require('path').resolve(process.env.P4API_ROOT || 'third_party/p4api'))\")",
     "p4ssl_root%": "<!(node -e \"console.log(require('path').resolve(process.env.P4SSL_ROOT || 'third_party/openssl'))\")",
-    "p4ssl_lib_dir%": "<!(node -e \"const fs=require('fs'),path=require('path');const root=path.resolve(process.env.P4SSL_ROOT||'third_party/openssl');const candidates=[path.join(root,'lib','VC','x64','MD'),path.join(root,'lib','VC','x64'),path.join(root,'lib')];const found=candidates.find(d=>fs.existsSync(path.join(d,'libssl.lib'))||fs.existsSync(path.join(d,'libssl.dll.a')));console.log(found||candidates[2])\")"
+    "p4ssl_static%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? '1' : '0')\")",
+    "p4ssl_lib_dir%": "<!(node -e \"const fs=require('fs'),path=require('path');const root=path.resolve(process.env.P4SSL_ROOT||'third_party/openssl');const staticMode=process.env.P4SSL_STATIC==='1';const dirs=[path.join(root,'lib'),path.join(root,'lib','VC','x64','MT'),path.join(root,'lib','VC','x64','MD'),path.join(root,'lib','VC','x64')];const want=staticMode?['libssl_static.lib']:['libssl.lib','libssl.dll.a'];const found=dirs.find(d=>want.some(n=>fs.existsSync(path.join(d,n))));console.log(found||dirs[0])\")",
+    "p4ssl_ssl_lib%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? 'libssl_static.lib' : 'libssl.lib')\")",
+    "p4ssl_crypto_lib%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? 'libcrypto_static.lib' : 'libcrypto.lib')\")"
   },
   "targets": [
     {
@@ -47,8 +50,8 @@
             "<(p4api_root)/lib/libp4script_curl.lib",
             "<(p4api_root)/lib/libp4script_sqlite.lib",
             "<(p4api_root)/lib/libsupp.lib",
-            "<(p4ssl_lib_dir)/libssl.lib",
-            "<(p4ssl_lib_dir)/libcrypto.lib",
+            "<(p4ssl_lib_dir)/<(p4ssl_ssl_lib)",
+            "<(p4ssl_lib_dir)/<(p4ssl_crypto_lib)",
             "ws2_32.lib",
             "wsock32.lib",
             "advapi32.lib",

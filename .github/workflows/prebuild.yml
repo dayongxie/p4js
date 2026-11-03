@@ -1,0 +1,47 @@
+name: Prebuilt binaries
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  prebuild:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev p7zip-full
+
+      - name: Point Linux at the system OpenSSL
+        if: runner.os == 'Linux'
+        run: echo "P4SSL_ROOT=/usr" >> "$GITHUB_ENV"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download the Perforce C++ API
+        run: npm run setup
+
+      - name: Build and stage the prebuild
+        run: npm run prebuild
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p4js-prebuild-${{ runner.os }}-${{ runner.arch }}
+          path: prebuilds/**
+          if-no-files-found: error

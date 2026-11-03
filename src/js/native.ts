@@ -89,12 +89,29 @@ export interface NativeModule {
 }
 
 const NATIVE_FILE = 'p4js_native.node';
+const PREBUILT_DIR = `${process.platform}-${process.arch}`;
 
 function candidatePaths(): string[] {
   return [
     path.join(__dirname, NATIVE_FILE),
     path.join(__dirname, '..', 'build', 'Release', NATIVE_FILE),
+    path.join(__dirname, '..', 'prebuilds', PREBUILT_DIR, NATIVE_FILE),
+    path.join(__dirname, 'prebuilds', PREBUILT_DIR, NATIVE_FILE),
   ];
+}
+
+/**
+ * Make sure a Windows addon can find OpenSSL DLLs shipped next to it. This is
+ * a no-op on other platforms.
+ */
+function prepareDllSearch(candidate: string): void {
+  if (process.platform !== 'win32') return;
+  const dir = path.dirname(candidate);
+  const current = process.env.PATH ?? '';
+  const parts = current.split(path.delimiter);
+  if (!parts.includes(dir)) {
+    process.env.PATH = `${dir}${path.delimiter}${current}`;
+  }
 }
 
 function isNativeModule(value: unknown): value is NativeModule {
@@ -123,6 +140,7 @@ export function loadNative(): NativeModule {
       continue;
     }
     try {
+      prepareDllSearch(candidate);
       const loaded: unknown = requireAddon(candidate);
       if (!isNativeModule(loaded)) {
         failures.push(`  - ${candidate} (missing NativeP4/NativeMap exports)`);
@@ -141,7 +159,7 @@ export function loadNative(): NativeModule {
       'Unable to load the p4js native addon.',
       'Tried the following locations:',
       ...failures,
-      'Build the native module first with "npm run build:native" (or "npm run build").',
+      'Use a platform prebuild from prebuilds/, or build the native module with "npm run build:native" (or "npm run build").',
     ].join('\n'),
   );
 }
