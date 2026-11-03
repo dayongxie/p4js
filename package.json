@@ -24,7 +24,7 @@
   "engines": {
     "node": ">=20"
   },
-  "gypfile": true,
+  "gypfile": false,
   "scripts": {
     "setup": "node scripts/setup-sdk.mjs",
     "build": "node scripts/build.mjs",
