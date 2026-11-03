@@ -37,15 +37,21 @@ function readP4ApiVersion() {
 }
 
 function readOpenSslVersion() {
-  try {
-    const header = fs.readFileSync(
-      path.join(root, 'third_party', 'openssl', 'include', 'openssl', 'opensslv.h'),
-      'utf8',
-    );
-    const match = header.match(/OPENSSL_VERSION_STR\s+"([^"]+)"/);
-    if (match) return match[1];
-  } catch {
-    // optional
+  const candidates = [
+    process.env.P4SSL_ROOT,
+    path.join(root, 'third_party', 'openssl'),
+  ].filter(Boolean);
+  for (const prefix of candidates) {
+    try {
+      const header = fs.readFileSync(
+        path.join(prefix, 'include', 'openssl', 'opensslv.h'),
+        'utf8',
+      );
+      const match = header.match(/OPENSSL_VERSION_STR\s+"([^"]+)"/);
+      if (match) return match[1];
+    } catch {
+      // try next candidate
+    }
   }
   return 'unknown';
 }
