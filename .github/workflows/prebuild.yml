@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14]
+        os: [ubuntu-latest, macos-15-intel, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +45,10 @@ jobs:
 
       - name: Build and stage the prebuild
         run: npm run prebuild
+
+      - name: Smoke-test the prebuild
+        run: |
+          node -e "const m=require('./prebuilds/'+process.platform+'-'+process.arch+'/p4js_native.node'); if(!m.NativeP4) process.exit(1); console.log(m.identify())"
 
       - uses: actions/upload-artifact@v4
         with:
