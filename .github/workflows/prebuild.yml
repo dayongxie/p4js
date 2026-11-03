@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-13, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +30,12 @@ jobs:
       - name: Point Linux at the system OpenSSL
         if: runner.os == 'Linux'
         run: echo "P4SSL_ROOT=/usr" >> "$GITHUB_ENV"
+
+      - name: Install macOS OpenSSL
+        if: runner.os == 'macOS'
+        run: |
+          brew install openssl@3
+          echo "P4SSL_ROOT=$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
 
       - name: Install npm dependencies
         run: npm ci

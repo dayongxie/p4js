@@ -5,7 +5,9 @@
     "p4ssl_static%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? '1' : '0')\")",
     "p4ssl_lib_dir%": "<!(node -e \"const fs=require('fs'),path=require('path');const root=path.resolve(process.env.P4SSL_ROOT||'third_party/openssl');const staticMode=process.env.P4SSL_STATIC==='1';const dirs=[path.join(root,'lib'),path.join(root,'lib','VC','x64','MT'),path.join(root,'lib','VC','x64','MD'),path.join(root,'lib','VC','x64')];const want=staticMode?['libssl_static.lib']:['libssl.lib','libssl.dll.a'];const found=dirs.find(d=>want.some(n=>fs.existsSync(path.join(d,n))));console.log(found||dirs[0])\")",
     "p4ssl_ssl_lib%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? 'libssl_static.lib' : 'libssl.lib')\")",
-    "p4ssl_crypto_lib%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? 'libcrypto_static.lib' : 'libcrypto.lib')\")"
+    "p4ssl_crypto_lib%": "<!(node -e \"console.log(process.env.P4SSL_STATIC === '1' ? 'libcrypto_static.lib' : 'libcrypto.lib')\")",
+    "p4ssl_mac_ssl%": "<!(node -e \"const fs=require('fs'),path=require('path');const root=path.resolve(process.env.P4SSL_ROOT||'third_party/openssl');const p=path.join(root,'lib','libssl.a');console.log(fs.existsSync(p)?p:'-lssl')\")",
+    "p4ssl_mac_crypto%": "<!(node -e \"const fs=require('fs'),path=require('path');const root=path.resolve(process.env.P4SSL_ROOT||'third_party/openssl');const p=path.join(root,'lib','libcrypto.a');console.log(fs.existsSync(p)?p:'-lcrypto')\")"
   },
   "targets": [
     {
@@ -95,6 +97,12 @@
         ["OS=='mac'", {
           "defines": ["CASE_INSENSITIVE"],
           "cflags_cc": ["-std=c++17", "-Wno-deprecated-declarations"],
+          "xcode_settings": {
+            "MACOSX_DEPLOYMENT_TARGET": "12.0",
+            "CLANG_CXX_LANGUAGE_STANDARD": "c++17",
+            "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+            "OTHER_CPLUSPLUSFLAGS": ["-Wno-deprecated-declarations"]
+          },
           "libraries": [
             "-L<(p4api_root)/lib",
             "-lp4api",
@@ -106,14 +114,18 @@
             "-lp4script_sqlite",
             "-lsupp",
             "-L<(p4ssl_root)/lib",
-            "-lssl",
-            "-lcrypto",
+            "<(p4ssl_mac_ssl)",
+            "<(p4ssl_mac_crypto)",
+            "-lz",
+            "-Wl,-rpath,<(p4ssl_root)/lib",
             "-framework",
-            "ApplicationServices",
+            "CoreFoundation",
+            "-framework",
+            "Security",
             "-framework",
             "Foundation",
             "-framework",
-            "Security"
+            "ApplicationServices"
           ]
         }]
       ]

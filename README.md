@@ -64,6 +64,25 @@ OpenSSL 3.5.x 到 `third_party/`，该目录已被 `.gitignore` 排除。Windows
 7-Zip 无法直接解包 OpenSSL 安装器，脚本会自动下载并使用 `innoextract`；也可以
 用 `--openssl-from` 指向本机已有的 OpenSSL 3 开发目录。
 
+### macOS（Intel / Apple Silicon）
+
+macOS 预编译二进制可通过 `.github/workflows/prebuild.yml` 在
+`macos-13`（x64）和 `macos-14`（arm64）上生成，产物分别在
+`prebuilds/darwin-x64/` 和 `prebuilds/darwin-arm64/`。从源码构建：
+
+```bash
+brew install openssl@3
+npm install
+npm run setup     # 按 process.arch 下载 x86_64/arm64 的 P4API，并复制 Homebrew OpenSSL
+npm run build
+npm run prebuild
+```
+
+`setup-sdk.mjs` 在 macOS 上会优先使用 `brew --prefix openssl@3`，也支持
+`P4SSL_ROOT` 指向其他 OpenSSL 3 安装目录。macOS 预编译模块的
+`MACOSX_DEPLOYMENT_TARGET` 是 12.0，静态链接 OpenSSL（Homebrew 的
+`libssl.a`/`libcrypto.a`），不依赖用户机器上的 Homebrew 路径。
+
 ## 快速开始
 
 ```js

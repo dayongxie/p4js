@@ -28,9 +28,12 @@ const P4API_WIN_URL =
 const P4API_LINUX_URL =
   process.env.P4API_URL ||
   `https://ftp.perforce.com/perforce/${P4API_VERSION}/bin.linux26x86_64/p4api-glibc2.12-openssl3.tgz`;
-const P4API_MAC_URL =
+const P4API_MAC_X64_URL =
   process.env.P4API_URL ||
   `https://ftp.perforce.com/perforce/${P4API_VERSION}/bin.macosx12u/p4api-openssl3.tgz`;
+const P4API_MAC_ARM64_URL =
+  process.env.P4API_URL ||
+  `https://ftp.perforce.com/perforce/${P4API_VERSION}/bin.macosx12arm64/p4api-openssl3.tgz`;
 const P4SSL_WIN_URL =
   process.env.P4SSL_URL || 'https://slproweb.com/download/Win64OpenSSL-3_5_9.exe';
 const INNOEXTRACT_URL =
@@ -212,6 +215,56 @@ async function downloadInnoExtract() {
   return findInnoExtract();
 }
 
+async function installMacOpenSsl(prefix) {
+  const source = path.resolve(prefix);
+  const marker = path.join(source, 'include', 'openssl', 'opensslv.h');
+  if (!isFile(marker)) {
+    throw new Error(`OpenSSL prefix ${source} does not contain include/openssl/opensslv.h`);
+  }
+  log(`copying Homebrew OpenSSL from ${source}`);
+  copyDir(path.join(source, 'include', 'openssl'), path.join(p4sslDir, 'include', 'openssl'));
+  for (const entry of fs.readdirSync(path.join(source, 'lib'))) {
+    if (/^(libssl|libcrypto).*\.(a|dylib)$/i.test(entry)) {
+      copyFile(path.join(source, 'lib', entry), path.join(p4sslDir, 'lib', entry));
+    }
+  }
+}
+
+function detectMacOpenSsl() {
+  if (process.env.P4SSL_ROOT) {
+    if (isFile(path.join(p4sslDir, 'include', 'openssl', 'opensslv.h'))) {
+      log(`using OpenSSL at ${p4sslDir}`);
+      return;
+    }
+    installMacOpenSsl(process.env.P4SSL_ROOT);
+    return;
+  }
+
+  let prefix;
+  try {
+    prefix = execFileSync('brew', ['--prefix', 'openssl@3'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch {
+    // brew not available or openssl@3 not installed
+  }
+
+  if (!prefix || !fs.existsSync(prefix)) {
+    for (const candidate of ['/opt/homebrew/opt/openssl@3', '/usr/local/opt/openssl@3']) {
+      if (fs.existsSync(candidate)) {
+        prefix = candidate;
+        break;
+      }
+    }
+  }
+
+  if (!prefix) {
+    throw new Error('macOS requires OpenSSL 3: run "brew install openssl@3" or set P4SSL_ROOT');
+  }
+  installMacOpenSsl(prefix);
+}
+
 async function installOpenSsl(opensslFrom) {
   const marker = path.join(p4sslDir, 'include', 'openssl', 'opensslv.h');
   if (isFile(marker)) {
@@ -319,10 +372,15 @@ async function main() {
     if (process.env.P4SSL_ROOT) log(`using system OpenSSL at ${p4sslDir}`);
     else log('Linux: install OpenSSL 3 development files (libssl-dev) and set P4SSL_ROOT if needed');
   } else if (process.platform === 'darwin') {
-    const archive = path.join(downloads, 'p4api-openssl3.tgz');
-    await download(P4API_MAC_URL, archive);
-    installP4ApiUnix(P4API_MAC_URL, 'p4api-openssl3.tgz');
-    log('macOS: install OpenSSL 3 (brew install openssl@3) and set P4SSL_ROOT if needed');
+    const arch = process.arch;
+    if (arch !== 'x64' && arch !== 'arm64') {
+      throw new Error(`unsupported macOS architecture: ${arch}`);
+    }
+    const url = arch === 'arm64' ? P4API_MAC_ARM64_URL : P4API_MAC_X64_URL;
+    const archive = path.join(downloads, `p4api-openssl3-${arch}.tgz`);
+    await download(url, archive);
+    installP4ApiUnix(url, `p4api-openssl3-${arch}.tgz`);
+    detectMacOpenSsl();
   } else {
     throw new Error(`unsupported platform: ${process.platform}`);
   }
