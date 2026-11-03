@@ -1,0 +1,44 @@
+{
+  "name": "p4js",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node.js native binding to the Perforce C++ API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "gypfile": true,
+  "scripts": {
+    "setup": "node scripts/setup-sdk.mjs",
+    "install": "node scripts/install.mjs",
+    "build": "node scripts/build.mjs",
+    "build:native": "node-gyp rebuild",
+    "build:js": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/run-tests.mjs",
+    "pretest": "node scripts/build.mjs",
+    "test:unit": "node scripts/run-tests.mjs --unit",
+    "test:integration": "node scripts/run-tests.mjs --integration",
+    "clean": "node scripts/clean.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "node-addon-api": "^8.9.2",
+    "node-gyp": "^11.4.2",
+    "typescript": "^5.9.3"
+  }
+}

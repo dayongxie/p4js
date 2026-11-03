@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    env:
+      P4SSL_ROOT: /usr
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev curl p7zip-full
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download the Perforce C++ API
+        run: npm run setup
+
+      - name: Install p4d for integration tests
+        run: |
+          sudo curl -fsSL \
+            https://ftp.perforce.com/perforce/r26.1/bin.linux26x86_64/p4d \
+            -o /usr/local/bin/p4d
+          sudo chmod +x /usr/local/bin/p4d
+          p4d -V
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build and test
+        run: npm test

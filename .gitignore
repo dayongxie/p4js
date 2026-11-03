@@ -1,0 +1,8 @@
+node_modules/
+build/
+dist/
+third_party/
+test/tmp/
+*.log
+*.tgz
+*.zip
