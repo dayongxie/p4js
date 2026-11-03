@@ -76,7 +76,8 @@
         }],
         ["OS=='linux'", {
           "defines": ["CASE_INSENSITIVE"],
-          "cflags_cc": ["-std=c++17", "-Wno-deprecated-declarations"],
+          "cflags": ["-fexceptions"],
+          "cflags_cc": ["-std=c++17", "-fexceptions", "-Wno-deprecated-declarations"],
           "libraries": [
             "-L<(p4api_root)/lib",
             "-lp4api",
@@ -96,7 +97,8 @@
         }],
         ["OS=='mac'", {
           "defines": ["CASE_INSENSITIVE"],
-          "cflags_cc": ["-std=c++17", "-Wno-deprecated-declarations"],
+          "cflags": ["-fexceptions"],
+          "cflags_cc": ["-std=c++17", "-fexceptions", "-Wno-deprecated-declarations"],
           "xcode_settings": {
             "MACOSX_DEPLOYMENT_TARGET": "12.0",
             "CLANG_CXX_LANGUAGE_STANDARD": "c++17",
@@ -118,14 +120,10 @@
             "<(p4ssl_mac_crypto)",
             "-lz",
             "-Wl,-rpath,<(p4ssl_root)/lib",
-            "-framework",
-            "CoreFoundation",
-            "-framework",
-            "Security",
-            "-framework",
-            "Foundation",
-            "-framework",
-            "ApplicationServices"
+            "-framework CoreFoundation",
+            "-framework Security",
+            "-framework Foundation",
+            "-framework ApplicationServices"
           ]
         }]
       ]
