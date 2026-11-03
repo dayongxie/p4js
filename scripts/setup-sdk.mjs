@@ -33,6 +33,9 @@ const P4API_MAC_URL =
   `https://ftp.perforce.com/perforce/${P4API_VERSION}/bin.macosx12u/p4api-openssl3.tgz`;
 const P4SSL_WIN_URL =
   process.env.P4SSL_URL || 'https://slproweb.com/download/Win64OpenSSL-3_5_9.exe';
+const INNOEXTRACT_URL =
+  process.env.INNOEXTRACT_URL ||
+  'https://github.com/dscharrer/innoextract/releases/download/1.9/innoextract-1.9-windows.zip';
 
 function arg(name) {
   const index = process.argv.indexOf(name);
@@ -183,7 +186,27 @@ function installP4ApiUnix(archiveUrl, archiveName) {
   }
 }
 
-function installOpenSsl(opensslFrom) {
+function findInnoExtract() {
+  const toolDir = path.join(downloads, 'innoextract');
+  const existing = findOne(toolDir, (file) => path.basename(file).toLowerCase() === 'innoextract.exe');
+  if (existing) return existing;
+
+  const archive = path.join(downloads, 'innoextract.zip');
+  if (!isFile(archive)) return undefined;
+  const sevenZip = find7z();
+  ensureDir(toolDir);
+  log('extracting innoextract');
+  execFileSync(sevenZip, ['x', '-y', `-o${toolDir}`, archive], { stdio: 'inherit' });
+  return findOne(toolDir, (file) => path.basename(file).toLowerCase() === 'innoextract.exe');
+}
+
+async function downloadInnoExtract() {
+  const archive = path.join(downloads, 'innoextract.zip');
+  await download(INNOEXTRACT_URL, archive);
+  return findInnoExtract();
+}
+
+async function installOpenSsl(opensslFrom) {
   const marker = path.join(p4sslDir, 'include', 'openssl', 'opensslv.h');
   if (isFile(marker)) {
     log(`OpenSSL already available at ${p4sslDir}`);
@@ -202,10 +225,34 @@ function installOpenSsl(opensslFrom) {
     const extractDir = path.join(downloads, 'openssl-extract');
     if (!isFile(archive)) throw new Error(`OpenSSL archive not found: ${archive}`);
     fs.rmSync(extractDir, { recursive: true, force: true });
-    extractZip(archive, extractDir);
-    const header = findOne(extractDir, (file) =>
-      file.replace(/\\/g, '/').endsWith('/include/openssl/opensslv.h'),
-    );
+
+    let header;
+    try {
+      extractZip(archive, extractDir);
+      header = findOne(extractDir, (file) =>
+        file.replace(/\\/g, '/').endsWith('/include/openssl/opensslv.h'),
+      );
+    } catch (error) {
+      log(`7-Zip could not extract the OpenSSL installer (${error.message})`);
+    }
+
+    if (!header) {
+      log('retrying OpenSSL extraction with innoextract');
+      let innoextract = findInnoExtract();
+      if (!innoextract) innoextract = await downloadInnoExtract();
+      if (!innoextract) {
+        throw new Error(
+          'cannot extract the OpenSSL installer; install 7-Zip and innoextract, or pass --openssl-from <dir>',
+        );
+      }
+      fs.rmSync(extractDir, { recursive: true, force: true });
+      ensureDir(extractDir);
+      execFileSync(innoextract, ['-e', '-d', extractDir, archive], { stdio: 'inherit' });
+      header = findOne(extractDir, (file) =>
+        file.replace(/\\/g, '/').endsWith('/include/openssl/opensslv.h'),
+      );
+    }
+
     if (!header) throw new Error('cannot find include/openssl/opensslv.h in OpenSSL package');
     sourceRoot = path.resolve(path.dirname(header), '..', '..');
     log(`installing OpenSSL from ${sourceRoot}`);
@@ -243,7 +290,7 @@ async function main() {
       const sslArchive = path.join(downloads, 'Win64OpenSSL.exe');
       await download(P4SSL_WIN_URL, sslArchive);
     }
-    installOpenSsl(opensslFrom);
+    await installOpenSsl(opensslFrom);
   } else if (process.platform === 'linux') {
     const archive = path.join(downloads, 'p4api-glibc2.12-openssl3.tgz');
     await download(P4API_LINUX_URL, archive);

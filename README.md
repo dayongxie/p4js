@@ -42,7 +42,9 @@ node scripts/setup-sdk.mjs --openssl-from "C:\Program Files\PostgreSQL\17"
 ```
 
 `npm run setup` 会下载 P4API 2026.1（`p4api_vs2022_static_openssl3.zip`）和
-OpenSSL 3.5.x 到 `third_party/`，该目录已被 `.gitignore` 排除。
+OpenSSL 3.5.x 到 `third_party/`，该目录已被 `.gitignore` 排除。Windows 上如果
+7-Zip 无法直接解包 OpenSSL 安装器，脚本会自动下载并使用 `innoextract`；也可以
+用 `--openssl-from` 指向本机已有的 OpenSSL 3 开发目录。
 
 ## 快速开始
 
