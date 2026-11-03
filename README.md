@@ -28,7 +28,9 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 
 ## 构建
 
-仓库内置 **Windows x64 预编译二进制**（`prebuilds/win32-x64/`），普通使用只需：
+仓库内置 **Windows x64** 和 **macOS x64/arm64** 预编译二进制
+（`prebuilds/win32-x64/`、`prebuilds/darwin-x64/`、`prebuilds/darwin-arm64/`），
+普通使用只需：
 
 ```bash
 npm install
@@ -36,8 +38,8 @@ npm install
 
 `require('p4js')` 会优先使用本地构建产物，其次使用 `prebuilds/<platform>-<arch>/`
 中的预编译模块。Windows 预编译包包含 `p4js_native.node` 以及 OpenSSL 3.5.9 的
-`libssl-3-x64.dll` / `libcrypto-3-x64.dll`，不需要安装 Visual Studio、P4API 或
-OpenSSL。
+`libssl-3-x64.dll` / `libcrypto-3-x64.dll`；macOS 预编译模块静态链接 OpenSSL，
+不依赖 Homebrew 路径。安装后无需 Visual Studio、P4API 或 OpenSSL。
 
 需要从源码构建（其他平台，或修改了 `src/native/`）：
 
@@ -66,9 +68,12 @@ OpenSSL 3.5.x 到 `third_party/`，该目录已被 `.gitignore` 排除。Windows
 
 ### macOS（Intel / Apple Silicon）
 
-macOS 预编译二进制可通过 `.github/workflows/prebuild.yml` 在
-`macos-13`（x64）和 `macos-14`（arm64）上生成，产物分别在
-`prebuilds/darwin-x64/` 和 `prebuilds/darwin-arm64/`。从源码构建：
+仓库已包含 `prebuilds/darwin-x64/` 和 `prebuilds/darwin-arm64/` 两个预编译模块，
+普通 `npm install` 后可直接使用。它们由 `.github/workflows/prebuild.yml` 在
+`macos-15-intel`（x64）和 `macos-14`（arm64）上构建，静态链接 OpenSSL，
+`MACOSX_DEPLOYMENT_TARGET` 为 12.0。
+
+需要从源码重新构建时：
 
 ```bash
 brew install openssl@3
@@ -79,9 +84,7 @@ npm run prebuild
 ```
 
 `setup-sdk.mjs` 在 macOS 上会优先使用 `brew --prefix openssl@3`，也支持
-`P4SSL_ROOT` 指向其他 OpenSSL 3 安装目录。macOS 预编译模块的
-`MACOSX_DEPLOYMENT_TARGET` 是 12.0，静态链接 OpenSSL（Homebrew 的
-`libssl.a`/`libcrypto.a`），不依赖用户机器上的 Homebrew 路径。
+`P4SSL_ROOT` 指向其他 OpenSSL 3 安装目录。
 
 ## 快速开始
 
