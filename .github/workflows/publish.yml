@@ -1,4 +1,5 @@
-# Staged npm release: tag push -> CI prebuilds -> npm stage publish.\nname: Publish npm (staged)
+# Staged npm release: tag push -> CI prebuilds -> npm stage publish.
+name: Publish npm (staged)
 
 on:
   push:
