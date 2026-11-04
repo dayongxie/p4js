@@ -51,7 +51,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dayongxie/p4js.git"
+    "url": "git+https://github.com/dayongxie/p4js.git"
   },
   "homepage": "https://github.com/dayongxie/p4js#readme",
   "bugs": {

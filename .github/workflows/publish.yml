@@ -22,10 +22,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          # Trusted publishing requires Node 22.14+ / npm 11.5.1+
+          # Trusted publishing requires Node 22.14+ / npm 11.5.1+.
+          # Do NOT set registry-url: actions/setup-node then injects a
+          # placeholder NODE_AUTH_TOKEN, which makes npm use token auth instead
+          # of the OIDC trusted-publishing flow.
           node-version: 24
           cache: npm
-          registry-url: https://registry.npmjs.org
 
       - name: Verify npm supports trusted publishing
         run: |
