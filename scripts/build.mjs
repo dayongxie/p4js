@@ -42,9 +42,20 @@ function copyDlls(dest) {
   }
 }
 
+function resolvePackageBin(packageName, binName) {
+  const packagePath = require.resolve(`${packageName}/package.json`);
+  const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  const relative =
+    typeof packageJson.bin === 'string' ? packageJson.bin : packageJson.bin?.[binName];
+  if (!relative) {
+    throw new Error(`package ${packageName} does not expose a ${binName} binary`);
+  }
+  return path.resolve(path.dirname(packagePath), relative);
+}
+
 function main() {
-  const gyp = require.resolve('node-gyp/bin/node-gyp.js');
-  const tsc = require.resolve('typescript/bin/tsc');
+  const gyp = resolvePackageBin('node-gyp', 'node-gyp');
+  const tsc = resolvePackageBin('typescript', 'tsc');
 
   log('building native module');
   runNode(gyp, ['rebuild']);

@@ -7,7 +7,8 @@ pull requests are welcome.
 
 Requirements:
 
-- Node.js 20 or newer
+- Node.js 22.22.2+ or 24.15+ for source builds (node-gyp 13 requirement); the
+  published package itself still supports Node.js 20+
 - Windows: Visual Studio 2022 (MSVC), Python 3 and 7-Zip
 - Linux/macOS: a C++17 compiler and OpenSSL 3 development headers
 - `p4d` for the integration tests (`P4D_BIN` can point at it)

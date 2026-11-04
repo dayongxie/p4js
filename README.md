@@ -27,8 +27,9 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 ## 环境要求
 
 - 只安装 npm 预编译包：Node.js >= 20，不需要编译器、P4API 或 OpenSSL
-- 从源码构建：Windows 需要 Visual Studio 2022（MSVC）+ Python 3 + 7-Zip；
-  Linux/macOS 需要 C++17 编译器 + OpenSSL 3 开发文件
+- 从源码构建：Node.js 22.22.2+ 或 24.15+（node-gyp 13 的要求）；Windows 需要
+  Visual Studio 2022（MSVC）+ Python 3 + 7-Zip；Linux/macOS 需要 C++17 编译器 +
+  OpenSSL 3 开发文件
 - 测试：本地 `p4d`（`P4D_BIN` 可覆盖）
 
 ## 安装
