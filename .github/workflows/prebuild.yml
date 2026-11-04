@@ -20,11 +20,11 @@ jobs:
           - macos-14
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -64,7 +64,7 @@ jobs:
         run: |
           node -e "const path=require('path');const dir=path.join('prebuilds',process.platform+'-'+process.arch);if(process.platform==='win32')process.env.PATH=path.resolve(dir)+';'+process.env.PATH;const m=require('./'+path.join(dir,'p4js_native.node'));if(!m.NativeP4)process.exit(1);console.log(m.identify())"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: p4js-prebuild-${{ runner.os }}-${{ runner.arch }}
           path: prebuilds/**
