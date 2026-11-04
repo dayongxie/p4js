@@ -55,7 +55,7 @@
     "@types/node": "^24.0.0",
     "node-addon-api": "^8.9.2",
     "node-gyp": "^11.4.2",
-    "typescript": "^5.9.3"
+    "typescript": "^7.0.2"
   },
   "publishConfig": {
     "access": "public",
