@@ -52,7 +52,7 @@
     "prepublishOnly": "npm run build:js && node scripts/check-publish.mjs"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.6.6",
     "node-addon-api": "^8.9.2",
     "node-gyp": "^11.4.2",
     "typescript": "^5.9.3"
