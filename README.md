@@ -26,28 +26,29 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 - Linux/macOS：C++17 编译器 + OpenSSL 3 开发文件
 - 测试：本地 `p4d`（`P4D_BIN` 可覆盖）
 
-## 构建
+## 安装
 
-仓库内置 **Windows x64** 和 **macOS x64/arm64** 预编译二进制
-（`prebuilds/win32-x64/`、`prebuilds/darwin-x64/`、`prebuilds/darwin-arm64/`），
-普通使用只需：
+普通使用直接从 npm 安装，包内已经包含 CI 构建好的四个平台预编译模块：
 
 ```bash
 npm install @dayongxie/p4js
 ```
 
-`require('@dayongxie/p4js')` 会优先使用本地构建产物，其次使用 `prebuilds/<platform>-<arch>/`
-中的预编译模块。Windows 预编译包包含 `p4js_native.node` 以及 OpenSSL 3.5.9 的
-`libssl-3-x64.dll` / `libcrypto-3-x64.dll`；macOS 预编译模块静态链接 OpenSSL，
-不依赖 Homebrew 路径。安装后无需 Visual Studio、P4API 或 OpenSSL。
+支持 `win32-x64`、`linux-x64`、`darwin-x64`、`darwin-arm64`。Windows 预编译包含
+OpenSSL 3.5.9 的 `libssl-3-x64.dll` / `libcrypto-3-x64.dll`；macOS 预编译静态链接
+OpenSSL，不依赖 Homebrew 路径。安装后无需 Visual Studio、P4API 或 OpenSSL。
 
-需要从源码构建（其他平台，或修改了 `src/native/`）：
+**Git 仓库本身不保存预编译二进制**（`prebuilds/` 已加入 `.gitignore`）。这些文件由
+`.github/workflows/prebuild.yml` 在 CI 中从 tag commit 构建，再汇总到 npm 包；
+这样仓库保持 source-only，npm 包仍然开箱即用。
+
+## 从源码构建
 
 ```bash
 npm install
 npm run setup     # 下载 P4API SDK（Windows 同时下载 OpenSSL 开发包）
 npm run build     # node-gyp + tsc，产物在 dist/
-npm run prebuild  # 可选：生成/更新 prebuilds/<platform>-<arch>/
+npm run prebuild  # 可选：生成 prebuilds/<platform>-<arch>/，供本地 npm pack 使用
 ```
 
 `npm run prebuild` 会写入 `prebuilds/<platform>-<arch>/manifest.json`（平台、
@@ -68,10 +69,9 @@ OpenSSL 3.5.x 到 `third_party/`，该目录已被 `.gitignore` 排除。Windows
 
 ### macOS（Intel / Apple Silicon）
 
-仓库已包含 `prebuilds/darwin-x64/` 和 `prebuilds/darwin-arm64/` 两个预编译模块，
-普通 `npm install` 后可直接使用。它们由 `.github/workflows/prebuild.yml` 在
-`macos-15-intel`（x64）和 `macos-14`（arm64）上构建，静态链接 OpenSSL，
-`MACOSX_DEPLOYMENT_TARGET` 为 12.0。
+npm 包内已包含 `darwin-x64` 和 `darwin-arm64` 两个预编译模块，普通
+`npm install` 后可直接使用。它们由 CI 在 `macos-15-intel`（x64）和
+`macos-14`（arm64）上构建，静态链接 OpenSSL，`MACOSX_DEPLOYMENT_TARGET` 为 12.0。
 
 需要从源码重新构建时：
 
@@ -195,8 +195,8 @@ npm run test:integration
   DVCS `init/clone`、`tempClient`。
 - 进度回调在主线程执行；请保持回调快速，且不要在回调里调用 p4js 的原生命令。
 - 同一实例的异步操作串行执行；进程内 P4API 调用使用全局互斥锁（v0.1 保守策略）。
-- 仓库内置 Windows x64 与 macOS x64/arm64 预编译二进制；Linux 需要从源码构建，
-  或使用 `Prebuilt binaries` GitHub Actions 工作流产出的 artifact。
+- npm 包内含 Windows x64、Linux x64、macOS x64/arm64 预编译二进制；Git 仓库不保存
+  二进制，由发布 workflow 从 tag commit 构建后汇总进 npm 包。
 
 ## 发布到 npmjs
 
@@ -210,9 +210,16 @@ npm 包名为 **`@dayongxie/p4js`**（`p4js` 这个 unscoped 名称已被其他�
 - Environment: 留空（如果填了，需要 workflow 里使用同名 environment）
 - Allowed actions: 只保留默认的 **npm stage publish** 即可，不需要 `npm publish`
 
-推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)，
-workflow 使用 Node 24（npm >= 11.5.1）和 `id-token: write` 获取 OIDC token，然后执行
-`npm stage publish --access public`。staged 版本不会立即公开，需要维护者审批：
+推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)：
+
+1. 复用 [.github/workflows/prebuild.yml](.github/workflows/prebuild.yml) 的 matrix，
+   在 `windows-2022`、`ubuntu-latest`、`macos-15-intel`、`macos-14` 上从同一个 tag
+   commit 构建四个平台的 prebuilds，并上传 artifact。
+2. `stage` job 下载全部 artifact 到 `prebuilds/`，执行 `tsc` 和
+   `scripts/check-publish.mjs`，然后用 Node 24（npm >= 11.5.1）和
+   `id-token: write` 获取 OIDC token，执行 `npm stage publish --access public`。
+
+staged 版本不会立即公开，需要维护者审批：
 
 ```bash
 npm stage list @dayongxie/p4js        # 查看待审批的 stage
@@ -229,10 +236,11 @@ npm version patch        # 或 minor / major
 git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
 ```
 
-workflow 会先执行 `tsc` 并运行 `scripts/check-publish.mjs`，检查 `dist/`、三个平台的
-prebuilds 以及 tag 与 `package.json.version` 是否一致。仓库为 private，因此不使用
-provenance；如果 npm 的 trusted publisher 连接不允许 stage publish，需要删除旧连接后
-重新添加。
+`check-publish.mjs` 会检查 `dist/`、四个平台的 prebuilds 以及 tag 与
+`package.json.version` 是否一致。仓库为 private，因此不使用 provenance；如果 npm
+的 trusted publisher 连接不允许 stage publish，需要删除旧连接后重新添加。旧的 Git
+历史中可能仍保留早期提交过的二进制；这不影响当前工作树和发布包，如需缩小 clone
+体积需要重写历史。
 
 ## 许可
 

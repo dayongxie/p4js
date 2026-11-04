@@ -35,6 +35,7 @@ for (const file of ['dist/index.js', 'dist/index.d.ts']) {
 
 const requiredPrebuilds = [
   'win32-x64',
+  'linux-x64',
   'darwin-x64',
   'darwin-arm64',
 ];

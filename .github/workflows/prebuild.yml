@@ -1,24 +1,29 @@
-name: Prebuilt binaries
+name: Build prebuilds
 
 on:
-  workflow_dispatch: {}
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
-  prebuild:
+  build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-15-intel, macos-14]
+        os:
+          - windows-2022
+          - ubuntu-latest
+          - macos-15-intel
+          - macos-14
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install Linux build dependencies
@@ -37,18 +42,24 @@ jobs:
           brew install openssl@3
           echo "P4SSL_ROOT=$(brew --prefix openssl@3)" >> "$GITHUB_ENV"
 
-      - name: Install npm dependencies
+      - name: Install dependencies
         run: npm ci
 
       - name: Download the Perforce C++ API
         run: npm run setup
 
-      - name: Build and stage the prebuild
+      - name: Build the native prebuild
         run: npm run prebuild
+
+      # Linux debug symbols make the addon unnecessarily large. Strip only the
+      # Linux ELF; keep macOS/Windows symbols untouched.
+      - name: Strip Linux prebuild
+        if: runner.os == 'Linux'
+        run: strip --strip-unneeded prebuilds/linux-x64/p4js_native.node
 
       - name: Smoke-test the prebuild
         run: |
-          node -e "const m=require('./prebuilds/'+process.platform+'-'+process.arch+'/p4js_native.node'); if(!m.NativeP4) process.exit(1); console.log(m.identify())"
+          node -e "const path=require('path');const dir=path.join('prebuilds',process.platform+'-'+process.arch);if(process.platform==='win32')process.env.PATH=path.resolve(dir)+';'+process.env.PATH;const m=require('./'+path.join(dir,'p4js_native.node'));if(!m.NativeP4)process.exit(1);console.log(m.identify())"
 
       - uses: actions/upload-artifact@v4
         with:

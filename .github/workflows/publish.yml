@@ -14,7 +14,11 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  prebuild:
+    uses: ./.github/workflows/prebuild.yml
+
   stage:
+    needs: prebuild
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -40,6 +44,16 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Download all prebuilds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: p4js-prebuild-*
+          path: prebuilds
+          merge-multiple: true
+
+      - name: Show staged prebuilds
+        run: find prebuilds -maxdepth 2 -type f -printf '%p %s bytes\n' | sort
 
       - name: Typecheck
         run: npm run typecheck

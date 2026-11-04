@@ -6,3 +6,4 @@ test/tmp/
 *.log
 *.tgz
 *.zip
+prebuilds/
