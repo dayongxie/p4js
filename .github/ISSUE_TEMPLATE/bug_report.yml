@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible bug in p4js
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please remove credentials, tickets, depot paths
+        and other sensitive data from logs before submitting.
+  - type: input
+    id: version
+    attributes:
+      label: p4js version
+      description: Output of `npm ls @dayongxie/p4js`
+      placeholder: "@dayongxie/p4js@0.1.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows x64
+        - Linux x64
+        - macOS Intel (x64)
+        - macOS Apple Silicon (arm64)
+        - Other / source build
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: "v24.15.0"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the expected and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Code or commands that reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / stack trace
+      description: Redact credentials and depot paths.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I removed credentials, tickets and sensitive data from this report.
+          required: true
+        - label: I searched existing issues before opening this one.
+          required: true

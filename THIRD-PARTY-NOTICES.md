@@ -11,6 +11,11 @@ The build downloads the Perforce P4 C++ API SDK at build time from
 repository or in the source tree. Its use is governed by the license shipped
 with the SDK (see `third_party/p4api/` after `npm run setup`).
 
+The published npm package contains compiled native addons that statically link
+the Perforce API libraries. Use and redistribution of those binaries remain
+subject to the Perforce P4 C++ API license; this project does not grant any
+additional rights to the Perforce SDK.
+
 ## p4go
 
 Parts of the native layer were adapted from the language-neutral C++ core of

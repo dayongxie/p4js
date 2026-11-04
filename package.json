@@ -1,7 +1,16 @@
 {
   "name": "@dayongxie/p4js",
   "version": "0.1.2",
-  "description": "Node.js native binding to the Perforce C++ API",
+  "description": "Async Node-API binding to the Perforce C++ API with prebuilt Windows, Linux and macOS binaries",
+  "license": "MIT",
+  "author": "dayongxie",
+  "keywords": [
+    "perforce",
+    "p4",
+    "node-addon",
+    "napi",
+    "native-addon"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -18,6 +27,9 @@
     "prebuilds",
     "README.md",
     "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
     "THIRD-PARTY-NOTICES.md"
   ],
   "engines": {

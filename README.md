@@ -1,5 +1,10 @@
 # p4js
 
+[![CI](https://github.com/dayongxie/p4js/actions/workflows/ci.yml/badge.svg)](https://github.com/dayongxie/p4js/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@dayongxie/p4js.svg)](https://www.npmjs.com/package/@dayongxie/p4js)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/node/v/@dayongxie/p4js.svg)](https://www.npmjs.com/package/@dayongxie/p4js)
+
 `p4js` 是 Perforce C++ API 的 Node.js 原生绑定（Node-API）。它提供与
 `p4python` / `p4go` 同级的客户端能力：持久连接、`run()`、spec
 fetch/save/parse/format、登录、提交、进度回调和取消。公共命令 API 全部返回
@@ -240,17 +245,26 @@ npmjs.com 网页审批。
 
 ```bash
 npm version patch        # 或 minor / major
-git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
+git push --follow-tags   # 推送 commit 和 vX.Y.Z tag
 ```
 
 `check-publish.mjs` 会检查 `dist/`、四个平台的 prebuilds 以及 tag 与
-`package.json.version` 是否一致。仓库为 private，因此不使用 provenance；如果 npm
-的 trusted publisher 连接不允许 stage publish，需要删除旧连接后重新添加。
+`package.json.version` 是否一致。仓库公开时 workflow 会自动给 staged publish
+加上 `--provenance`；私有仓库则跳过。如果 npm 的 trusted publisher 连接不允许
+stage publish，需要删除旧连接后重新添加。
 
 本地直接 `npm publish` 通常不可行：`prepublishOnly` 会检查四个平台的 prebuilds，
 而本地一般只有当前平台的产物；发布请统一走 tag + CI 流程。Git 历史已经清理，
 不再包含任何 `prebuilds/` 二进制。
 
+## 贡献
+
+开发和提交说明见
+[CONTRIBUTING.md](https://github.com/dayongxie/p4js/blob/master/CONTRIBUTING.md)。
+安全问题请按
+[SECURITY.md](https://github.com/dayongxie/p4js/blob/master/SECURITY.md) 私下报告，
+不要开公开 issue。
+
 ## 许可
 
-MIT。第三方组件与移植来源见 `THIRD-PARTY-NOTICES.md`。
+MIT。第三方组件与移植来源见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
