@@ -33,10 +33,10 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 普通使用只需：
 
 ```bash
-npm install
+npm install @dayongxie/p4js
 ```
 
-`require('p4js')` 会优先使用本地构建产物，其次使用 `prebuilds/<platform>-<arch>/`
+`require('@dayongxie/p4js')` 会优先使用本地构建产物，其次使用 `prebuilds/<platform>-<arch>/`
 中的预编译模块。Windows 预编译包包含 `p4js_native.node` 以及 OpenSSL 3.5.9 的
 `libssl-3-x64.dll` / `libcrypto-3-x64.dll`；macOS 预编译模块静态链接 OpenSSL，
 不依赖 Homebrew 路径。安装后无需 Visual Studio、P4API 或 OpenSSL。
@@ -89,7 +89,7 @@ npm run prebuild
 ## 快速开始
 
 ```js
-import { P4, P4Error } from 'p4js';
+import { P4, P4Error } from '@dayongxie/p4js';
 
 const p4 = new P4({
   port: process.env.P4PORT,
@@ -197,6 +197,33 @@ npm run test:integration
 - 同一实例的异步操作串行执行；进程内 P4API 调用使用全局互斥锁（v0.1 保守策略）。
 - 仓库内置 Windows x64 预编译二进制；Linux/macOS 需要从源码构建，或使用
   `Prebuilt binaries` GitHub Actions 工作流产出的 artifact。
+
+## 发布到 npmjs
+
+npm 包名为 **`@dayongxie/p4js`**（`p4js` 这个 unscoped 名称已被其他维护者占用）。
+推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)
+自动构建 JS、校验包内容并执行 `npm publish --access public`。
+
+首次配置：
+
+1. 在 npmjs.com 用拥有 `@dayongxie` scope 的账号创建 **Automation token**。
+2. 写入 GitHub secret：
+
+   ```bash
+   gh secret set NPM_TOKEN --repo dayongxie/p4js
+   ```
+
+发版流程：
+
+```bash
+npm version patch        # 或 minor / major
+git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
+```
+
+`prepublishOnly` 会先执行 `tsc` 并运行 `scripts/check-publish.mjs`，检查
+`dist/`、三个平台的 prebuilds 以及 tag 与 `package.json.version` 是否一致。
+如果 npm 账号没有该 scope 的发布权限，publish 会失败，需要先在 npmjs.com
+创建 scope 或改用其他已授权 scope。
 
 ## 许可
 

@@ -1,7 +1,6 @@
 {
-  "name": "p4js",
+  "name": "@dayongxie/p4js",
   "version": "0.1.0",
-  "private": true,
   "description": "Node.js native binding to the Perforce C++ API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -36,12 +35,26 @@
     "pretest": "node scripts/build.mjs",
     "test:unit": "node scripts/run-tests.mjs --unit",
     "test:integration": "node scripts/run-tests.mjs --integration",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "check:publish": "node scripts/check-publish.mjs",
+    "prepublishOnly": "npm run build:js && node scripts/check-publish.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "node-addon-api": "^8.9.2",
     "node-gyp": "^11.4.2",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dayongxie/p4js.git"
+  },
+  "homepage": "https://github.com/dayongxie/p4js#readme",
+  "bugs": {
+    "url": "https://github.com/dayongxie/p4js/issues"
   }
 }

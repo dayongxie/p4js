@@ -15,13 +15,29 @@ function runNode(script, args) {
   execFileSync(process.execPath, [script, ...args], { cwd: root, stdio: 'inherit' });
 }
 
+function copyIfPossible(source, dest) {
+  try {
+    fs.copyFileSync(source, dest);
+    return true;
+  } catch (error) {
+    // Windows may hold the previously loaded addon open (for example when a
+    // long-running Node process is using it). Keep the existing artifact so
+    // `npm test` can still run against the last build.
+    if (error.code === 'EBUSY' || error.code === 'EPERM' || error.code === 'EACCES') {
+      console.warn(`[build] cannot update ${dest} (${error.code}); keeping the existing file`);
+      return false;
+    }
+    throw error;
+  }
+}
+
 function copyDlls(dest) {
   const bin = path.resolve(process.env.P4SSL_ROOT || path.join(root, 'third_party', 'openssl'), 'bin');
   if (!fs.existsSync(bin)) return;
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(bin)) {
     if (/^(libssl|libcrypto).*\.dll$/i.test(entry)) {
-      fs.copyFileSync(path.join(bin, entry), path.join(dest, entry));
+      copyIfPossible(path.join(bin, entry), path.join(dest, entry));
     }
   }
 }
@@ -42,7 +58,7 @@ function main() {
   }
   const dist = path.join(root, 'dist');
   fs.mkdirSync(dist, { recursive: true });
-  fs.copyFileSync(native, path.join(dist, 'p4js_native.node'));
+  copyIfPossible(native, path.join(dist, 'p4js_native.node'));
   copyDlls(dist);
   log('done');
 }
