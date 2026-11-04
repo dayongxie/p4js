@@ -21,9 +21,9 @@ BSD-3，见 `THIRD-PARTY-NOTICES.md`），但**不是**未修改的 vendor 目�
 
 ## 环境要求
 
-- Node.js >= 20（开发验证使用 Node 24）
-- Windows：Visual Studio 2022（MSVC）+ Python 3 + 7-Zip
-- Linux/macOS：C++17 编译器 + OpenSSL 3 开发文件
+- 只安装 npm 预编译包：Node.js >= 20，不需要编译器、P4API 或 OpenSSL
+- 从源码构建：Windows 需要 Visual Studio 2022（MSVC）+ Python 3 + 7-Zip；
+  Linux/macOS 需要 C++17 编译器 + OpenSSL 3 开发文件
 - 测试：本地 `p4d`（`P4D_BIN` 可覆盖）
 
 ## 安装
@@ -40,15 +40,18 @@ OpenSSL，不依赖 Homebrew 路径。安装后无需 Visual Studio、P4API 或 
 
 **Git 仓库本身不保存预编译二进制**（`prebuilds/` 已加入 `.gitignore`）。这些文件由
 `.github/workflows/prebuild.yml` 在 CI 中从 tag commit 构建，再汇总到 npm 包；
-这样仓库保持 source-only，npm 包仍然开箱即用。
+这样仓库保持 source-only，npm 包仍然开箱即用。Git 历史也已用
+`git filter-repo` 清理，所有提交中都不再包含 `prebuilds/`，普通 clone 不会拉取二进制。
 
 ## 从源码构建
 
+从 Git clone 的源码不包含预编译模块，需要自行构建：
+
 ```bash
-npm install
+npm ci
 npm run setup     # 下载 P4API SDK（Windows 同时下载 OpenSSL 开发包）
 npm run build     # node-gyp + tsc，产物在 dist/
-npm run prebuild  # 可选：生成 prebuilds/<platform>-<arch>/，供本地 npm pack 使用
+npm run prebuild  # 可选：生成当前平台的 prebuilds/<platform>-<arch>/
 ```
 
 `npm run prebuild` 会写入 `prebuilds/<platform>-<arch>/manifest.json`（平台、
@@ -226,6 +229,10 @@ npm stage list @dayongxie/p4js        # 查看待审批的 stage
 npm stage approve <stage-id>          # 本机登录 + 2FA 后批准
 ```
 
+`npm stage` 需要较新的 npm（建议 `npm install -g npm@latest`；例如 npm 11.12.1
+还没有该命令）。Trusted Publishing 本身的最低要求是 npm 11.5.1；也可以直接使用
+npmjs.com 网页审批。
+
 也可以直接在 npmjs.com 的包页面 → **Versions / Staged** 中点击 approve。批准后
 版本才会正式发布并更新 `latest` / `next` dist-tag。
 
@@ -238,9 +245,11 @@ git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
 
 `check-publish.mjs` 会检查 `dist/`、四个平台的 prebuilds 以及 tag 与
 `package.json.version` 是否一致。仓库为 private，因此不使用 provenance；如果 npm
-的 trusted publisher 连接不允许 stage publish，需要删除旧连接后重新添加。旧的 Git
-历史中可能仍保留早期提交过的二进制；这不影响当前工作树和发布包，如需缩小 clone
-体积需要重写历史。
+的 trusted publisher 连接不允许 stage publish，需要删除旧连接后重新添加。
+
+本地直接 `npm publish` 通常不可行：`prepublishOnly` 会检查四个平台的 prebuilds，
+而本地一般只有当前平台的产物；发布请统一走 tag + CI 流程。Git 历史已经清理，
+不再包含任何 `prebuilds/` 二进制。
 
 ## 许可
 
