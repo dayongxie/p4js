@@ -201,21 +201,26 @@ npm run test:integration
 ## 发布到 npmjs
 
 npm 包名为 **`@dayongxie/p4js`**（`p4js` 这个 unscoped 名称已被其他维护者占用）。
-发布使用 npm **Trusted Publishing (OIDC)**，不需要 `NPM_TOKEN`。在 npmjs.com 的
-包设置中配置：
+发布使用 npm **Trusted Publishing (OIDC) + Staged Publishing**，不需要 `NPM_TOKEN`。
+在 npmjs.com 的包设置中配置：
 
 - Publisher: GitHub
 - Repository: `dayongxie/p4js`
 - Workflow: `publish.yml`
 - Environment: 留空（如果填了，需要 workflow 里使用同名 environment）
-- Allowed actions: 除默认的 **npm stage publish** 外，必须勾选 **npm publish**，
-  否则 `npm publish` 会返回 `403 OIDC permission denied for this action`
-- npm 的现有 trusted publisher 连接不能直接修改 Allowed actions；需要删除旧连接，
-  重新添加并勾选 `npm publish`（新连接需在 2 天内完成首次成功发布）
+- Allowed actions: 只保留默认的 **npm stage publish** 即可，不需要 `npm publish`
 
 推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)，
-使用 `id-token: write` 获取 OIDC token，然后执行 `npm publish --access public`。
-workflow 使用 Node 24（npm >= 11.5.1），这是 Trusted Publishing 的要求。
+workflow 使用 Node 24（npm >= 11.5.1）和 `id-token: write` 获取 OIDC token，然后执行
+`npm stage publish --access public`。staged 版本不会立即公开，需要维护者审批：
+
+```bash
+npm stage list @dayongxie/p4js        # 查看待审批的 stage
+npm stage approve <stage-id>          # 本机登录 + 2FA 后批准
+```
+
+也可以直接在 npmjs.com 的包页面 → **Versions / Staged** 中点击 approve。批准后
+版本才会正式发布并更新 `latest` / `next` dist-tag。
 
 发版流程：
 
@@ -224,11 +229,10 @@ npm version patch        # 或 minor / major
 git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
 ```
 
-`prepublishOnly` 会先执行 `tsc` 并运行 `scripts/check-publish.mjs`，检查
-`dist/`、三个平台的 prebuilds 以及 tag 与 `package.json.version` 是否一致。
-仓库为 private 时 workflow 跳过 `--provenance`（provenance 需要公开源码仓库）；
-仓库改为 public 后会自动加上 provenance。如果修改了 workflow 文件名或仓库名，
-需要同步更新 npmjs.com 的 Trusted Publisher 配置。
+workflow 会先执行 `tsc` 并运行 `scripts/check-publish.mjs`，检查 `dist/`、三个平台的
+prebuilds 以及 tag 与 `package.json.version` 是否一致。仓库为 private，因此不使用
+provenance；如果 npm 的 trusted publisher 连接不允许 stage publish，需要删除旧连接后
+重新添加。
 
 ## 许可
 
