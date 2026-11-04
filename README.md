@@ -207,6 +207,9 @@ npm 包名为 **`@dayongxie/p4js`**（`p4js` 这个 unscoped 名称已被其他�
 - Publisher: GitHub
 - Repository: `dayongxie/p4js`
 - Workflow: `publish.yml`
+- Environment: 留空（如果填了，需要 workflow 里使用同名 environment）
+- Allowed actions: 除默认的 **npm stage publish** 外，必须勾选 **npm publish**，
+  否则 `npm publish` 会返回 `403 OIDC permission denied for this action`
 
 推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)，
 使用 `id-token: write` 获取 OIDC token，然后执行 `npm publish --access public`。
