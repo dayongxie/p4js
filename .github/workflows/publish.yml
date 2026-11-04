@@ -20,7 +20,7 @@ jobs:
   stage:
     needs: prebuild
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -45,8 +45,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Download all prebuilds
-        uses: actions/download-artifact@v4
+      - name: Clean prebuilds directory
+        run: rm -rf prebuilds
+
+      - uses: actions/download-artifact@v4
         with:
           pattern: p4js-prebuild-*
           path: prebuilds
@@ -62,6 +64,11 @@ jobs:
         run: |
           npm run build:js
           node scripts/check-publish.mjs
+
+      - name: Test the Linux prebuilt addon
+        run: |
+          cp prebuilds/linux-x64/p4js_native.node dist/p4js_native.node
+          npm run test:unit
 
       # The trusted publisher is configured for npm stage publish only.
       # Staging does not require 2FA; a maintainer approves the staged version

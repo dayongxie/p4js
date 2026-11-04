@@ -6,9 +6,17 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       P4SSL_ROOT: /usr
     steps:
@@ -32,7 +40,7 @@ jobs:
 
       - name: Install p4d for integration tests
         run: |
-          sudo curl -fsSL \
+          sudo curl -fsSL --retry 3 --retry-delay 2 \
             https://ftp.perforce.com/perforce/r26.1/bin.linux26x86_64/p4d \
             -o /usr/local/bin/p4d
           sudo chmod +x /usr/local/bin/p4d
