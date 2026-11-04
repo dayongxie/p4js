@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { loadNative } from './native';
 
 export { P4 } from './p4';
@@ -18,8 +21,12 @@ export type {
   P4Ticket,
 } from './types';
 
-/** Version of the p4js JavaScript API. */
-export const version = '0.1.0';
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '..', 'package.json'), 'utf8'),
+) as { version: string };
+
+/** Version of the p4js JavaScript API, kept in sync with package.json. */
+export const version = packageJson.version;
 
 /** Identify the underlying native Perforce client build. */
 export function identify(): string {
