@@ -195,23 +195,22 @@ npm run test:integration
   DVCS `init/clone`、`tempClient`。
 - 进度回调在主线程执行；请保持回调快速，且不要在回调里调用 p4js 的原生命令。
 - 同一实例的异步操作串行执行；进程内 P4API 调用使用全局互斥锁（v0.1 保守策略）。
-- 仓库内置 Windows x64 预编译二进制；Linux/macOS 需要从源码构建，或使用
-  `Prebuilt binaries` GitHub Actions 工作流产出的 artifact。
+- 仓库内置 Windows x64 与 macOS x64/arm64 预编译二进制；Linux 需要从源码构建，
+  或使用 `Prebuilt binaries` GitHub Actions 工作流产出的 artifact。
 
 ## 发布到 npmjs
 
 npm 包名为 **`@dayongxie/p4js`**（`p4js` 这个 unscoped 名称已被其他维护者占用）。
-推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)
-自动构建 JS、校验包内容并执行 `npm publish --access public`。
+发布使用 npm **Trusted Publishing (OIDC)**，不需要 `NPM_TOKEN`。在 npmjs.com 的
+包设置中配置：
 
-首次配置：
+- Publisher: GitHub
+- Repository: `dayongxie/p4js`
+- Workflow: `publish.yml`
 
-1. 在 npmjs.com 用拥有 `@dayongxie` scope 的账号创建 **Automation token**。
-2. 写入 GitHub secret：
-
-   ```bash
-   gh secret set NPM_TOKEN --repo dayongxie/p4js
-   ```
+推送 `v*` tag 会触发 [.github/workflows/publish.yml](.github/workflows/publish.yml)，
+使用 `id-token: write` 获取 OIDC token，然后执行 `npm publish --access public`。
+workflow 使用 Node 24（npm >= 11.5.1），这是 Trusted Publishing 的要求。
 
 发版流程：
 
@@ -222,8 +221,9 @@ git push --follow-tags   # 推送 commit 和 v0.1.1 这样的 tag
 
 `prepublishOnly` 会先执行 `tsc` 并运行 `scripts/check-publish.mjs`，检查
 `dist/`、三个平台的 prebuilds 以及 tag 与 `package.json.version` 是否一致。
-如果 npm 账号没有该 scope 的发布权限，publish 会失败，需要先在 npmjs.com
-创建 scope 或改用其他已授权 scope。
+仓库为 private 时 workflow 跳过 `--provenance`（provenance 需要公开源码仓库）；
+仓库改为 public 后会自动加上 provenance。如果修改了 workflow 文件名或仓库名，
+需要同步更新 npmjs.com 的 Trusted Publisher 配置。
 
 ## 许可
 
