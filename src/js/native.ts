@@ -100,32 +100,6 @@ function candidatePaths(): string[] {
   ];
 }
 
-/**
- * Make sure a Windows addon can find OpenSSL DLLs shipped next to it. This is
- * a no-op on other platforms.
- *
- * Windows resolves an addon's dependent DLLs through PATH, so the directory
- * holding the addon (and its libssl/libcrypto DLLs) must be on PATH while the
- * addon is loaded. PATH belongs to the whole process and is inherited by every
- * child process started later, so the previous value is returned for
- * {@link loadNative} to restore once the addon and its DLLs are loaded:
- * leaking the entry would shadow unrelated executables — for example a
- * `dist/p4.js` sitting next to the addon would win over `p4.exe` when a later
- * child process runs `p4`.
- *
- * @param candidate Absolute path of the native addon file.
- * @returns The PATH value to restore, or `undefined` when PATH was unchanged.
- */
-function prepareDllSearch(candidate: string): string | undefined {
-  if (process.platform !== 'win32') return undefined;
-  const dir = path.dirname(candidate);
-  const current = process.env.PATH ?? '';
-  const parts = current.split(path.delimiter);
-  if (parts.includes(dir)) return undefined;
-  process.env.PATH = `${dir}${path.delimiter}${current}`;
-  return current;
-}
-
 function isNativeModule(value: unknown): value is NativeModule {
   if (typeof value !== 'object' || value === null) return false;
   const module = value as Record<string, unknown>;
@@ -138,7 +112,16 @@ let cached: NativeModule | undefined;
  * Load (and cache) the native addon.
  *
  * The addon is looked up next to the compiled JavaScript first (the `dist`
- * layout) and then in the node-gyp build output (`build/Release`).
+ * layout), then in the node-gyp build output (`build/Release`), then in the
+ * platform prebuild shipped with the package (`prebuilds/<platform>-<arch>`).
+ *
+ * No DLL search path is prepared for the Windows build. Node loads addons
+ * through libuv's `uv_dlopen`, which calls `LoadLibraryExW` with
+ * `LOAD_WITH_ALTERED_SEARCH_PATH`; that makes the addon's own directory the
+ * first place the loader looks for its dependencies, so the libssl/libcrypto
+ * DLLs sitting next to `p4js_native.node` are resolved before `PATH` is ever
+ * consulted. Touching `PATH` here would be dead weight on every platform, and
+ * it is process-wide state inherited by child processes.
  *
  * @throws Error with a descriptive message when the addon cannot be loaded.
  */
@@ -151,9 +134,7 @@ export function loadNative(): NativeModule {
       failures.push(`  - ${candidate} (file not found)`);
       continue;
     }
-    let restorePath: string | undefined;
     try {
-      restorePath = prepareDllSearch(candidate);
       const loaded: unknown = requireAddon(candidate);
       if (!isNativeModule(loaded)) {
         failures.push(`  - ${candidate} (missing NativeP4/NativeMap exports)`);
@@ -164,10 +145,6 @@ export function loadNative(): NativeModule {
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       failures.push(`  - ${candidate} (load failed: ${detail})`);
-    } finally {
-      // The addon and its DLLs are loaded now; drop the process-wide PATH
-      // change so child processes keep resolving ordinary executables normally.
-      if (restorePath !== undefined) process.env.PATH = restorePath;
     }
   }
 
