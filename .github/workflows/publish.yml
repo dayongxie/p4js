@@ -78,6 +78,7 @@ jobs:
       # later in the npm UI (or with `npm stage approve <id>` + 2FA).
       - name: Stage the package on npm
         run: |
+          set -o pipefail
           VERSION=$(node -p "require('./package.json').version")
           case "$VERSION" in
             *-*) DIST_TAG=next ;;
